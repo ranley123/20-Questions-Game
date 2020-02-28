@@ -14,9 +14,9 @@ public class Game {
 	String filepath;
 	BufferedReader reader;
 	ArrayList<String> question_list;
-	ArrayList<Double> answer_list;
+	ArrayList<Integer> answer_list;
+	ArrayList<ArrayList<Integer>> animal_paths;
 	BuildModel model;
-	String animal_filepath = "animals.csv";
 	Scanner in;
 	
 	final int yes = 1;
@@ -34,34 +34,13 @@ public class Game {
 			//			System.out.println("debug: " + question);
 		}
 	}
-	
-	private void read_animals_from_csv(String animal_filepath, ArrayList<String> animals) {
-		File labels = new File(animal_filepath);
-		try {
-			if (labels.exists()) {
-				String label = "";
-				reader = new BufferedReader(new FileReader(animal_filepath));
-				while((label = reader.readLine()) != null) {
-					if(label.length() > 0)
-						animals.add(label);
-				}
-				reader.close();
-			}
-		}
-		catch(FileNotFoundException e) {
-			System.out.println(e.getMessage());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
 
 	private boolean is_valid_input(int input) {
 		return (input <= 1 && input >= 0);
 	}
 
 	private void prompt_questions() {
-		answer_list = new ArrayList<Double>();
+		answer_list = new ArrayList<>();
 		System.out.println("Please enter 0 for no, 1 for yes !");
 		for (int i = 0; i < question_list.size(); i++) {
 			System.out.println("Q(" + (i + 1) + ")" + question_list.get(i));
@@ -69,8 +48,9 @@ public class Game {
 			if (!is_valid_input(answer)) {
 				return;
 			}
-			answer_list.add((double)answer);
+			answer_list.add(answer);
 		}
+		Config.answer_list = answer_list;
 	}
 
 	private void initialise() throws IOException {
@@ -94,35 +74,49 @@ public class Game {
 	public void run() throws IOException {
 		prompt_questions();
 		double[] outputs = model.run(answer_list);
-		get_answer(outputs);
+		predict(outputs);
 		in.close();
 	}
 
-	private void get_answer(double[] outputs) {
-		ArrayList<String> labels = new ArrayList<String>();
+	private void predict(double[] outputs) {
 		Map<String, Double> map = new HashMap<>();
 		ValueComparator bvc = new ValueComparator(map);
 		Map<String, Double> sorted_map = new TreeMap<>(bvc);
-		
-		read_animals_from_csv(animal_filepath, labels);
+		ArrayList<String> animal_labels = Config.animal_labels;
 		for (int i = 0; i < outputs.length; i++) {
-			map.put(labels.get(i), outputs[i]);
+			map.put(animal_labels.get(i), outputs[i]);
 		}
 		sorted_map.putAll(map);
+		int counter = 0;
 		
 		for (Map.Entry<String, Double> entry: sorted_map.entrySet()) {
-			System.out.println("You are think of: " + entry.getKey());
-			System.out.println("Please enter 1 for yes, 0 for no");
-			int answer = in.nextInt();
-			if (is_valid_input(answer)) {
-				if (answer == yes)
-					break;
-				else
-					continue;
+			if(counter > 2){
+				System.out.println("You win. What is your animal?");
+				in = new Scanner(System.in);
+				String new_animal = in.next();
+				// need to check type here
+				System.out.println("I need to learn it now");
+				model.add_new_animal(new_animal);
+				return;
+			}
+			else{
+				counter++;
+				System.out.println("You are think of: " + entry.getKey());
+				System.out.println("Please enter 1 for yes, 0 for no");
+				int answer = in.nextInt();
+				if (is_valid_input(answer)) {
+					if (answer == yes) {
+						System.out.println("Thank you for playing the game!");
+						return;
+					}
+				}
 			}
 		}
-//		System.out.println("You are thinking about: " + labels.get(index));
+		
+		
+
 	}
+	
 	
 	public Game(String filepath) throws IOException {
 		this.filepath = filepath;
