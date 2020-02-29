@@ -11,7 +11,6 @@ import java.util.Scanner;
 import java.util.TreeMap;
 
 public class Game {
-	String filepath;
 	BufferedReader reader;
 	ArrayList<String> question_list;
 	ArrayList<Integer> answer_list;
@@ -52,11 +51,12 @@ public class Game {
 		}
 		Config.answer_list = answer_list;
 	}
+	
 
 	private void initialise() throws IOException {
 		try{
 			question_list = new ArrayList<>();
-			reader  = new BufferedReader(new FileReader(filepath));
+			reader = new BufferedReader(new FileReader(Config.question_filepath));
 			read_questions(question_list, reader);
 			model = new BuildModel();
 			in = new Scanner(System.in);
@@ -73,7 +73,7 @@ public class Game {
 
 	public void run() throws IOException {
 		prompt_questions();
-		double[] outputs = model.run(answer_list);
+		double[] outputs = model.run();
 		predict(outputs);
 		in.close();
 	}
@@ -94,9 +94,12 @@ public class Game {
 				System.out.println("You win. What is your animal?");
 				in = new Scanner(System.in);
 				String new_animal = in.next();
+				System.out.println("Give me a feature about your animal but my guess dont have");
+				in = new Scanner(System.in);
+				String new_question = in.nextLine();
 				// need to check type here
 				System.out.println("I need to learn it now");
-				model.add_new_animal(new_animal);
+				model.add_new_animal(new_animal, new_question);
 				return;
 			}
 			else{
@@ -118,8 +121,7 @@ public class Game {
 	}
 	
 	
-	public Game(String filepath) throws IOException {
-		this.filepath = filepath;
+	public Game() throws IOException {
 		initialise();
 	}
 
