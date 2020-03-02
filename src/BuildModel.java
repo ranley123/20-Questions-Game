@@ -42,16 +42,16 @@ public class BuildModel {
 		return outputs;
 	}
 	
-	public void add_new_animal(String new_animal, String new_question) {
-		new_animal = new_animal.toLowerCase();
+	public void add_new_concept(String new_concept, String new_question) {
+		new_concept = new_concept.toLowerCase();
 		
-		if (animal_exists(Config.answer_list)) {
-			System.out.println("Animal already exists!");
+		if (concept_exists(Config.answer_list)) {
+			System.out.println("concept already exists!");
 			return;
 		}
 		else {
 			write_new_to_question(new_question);
-			write_new_to_data(new_animal);
+			write_new_to_data(new_concept);
 			System.out.println("write files!");
 			ArrayList<Integer> answer_list = Config.answer_list;
 			answer_list.add(1);
@@ -76,7 +76,7 @@ public class BuildModel {
 		
 	}
 	
-	private void write_new_to_data(String animal_label) {
+	private void write_new_to_data(String concept_label) {
 		StringBuilder sb = new StringBuilder();
 		try {
 			reader = new BufferedReader(new FileReader(Config.data_filepath));
@@ -89,7 +89,7 @@ public class BuildModel {
 				String path = parts[0];
 				path += " 0,"; 
 				result += path;
-				// update animal encoder
+				// update concept encoder
 				String encoder = parts[1];
 				encoder += " 0,";
 				result += encoder;
@@ -98,7 +98,7 @@ public class BuildModel {
 //				System.out.println(result);
 			}
 			reader.close();
-			// add new line of animal
+			// add new line of concept
 			FileWriter writer = new FileWriter(Config.data_filepath, false);
 			ArrayList<Integer> answer_list = Config.answer_list;
 			String new_line = "";
@@ -108,15 +108,15 @@ public class BuildModel {
 			new_line += " 1,";
 			new_line = new_line.trim();
 			
-			int num_of_animals = Config.animal_labels.size();
+			int num_of_concepts = Config.concept_labels.size();
 			String new_encoding = "";
-			for (int i = 0; i < num_of_animals; i++) {
+			for (int i = 0; i < num_of_concepts; i++) {
 				new_encoding += " 0";
 			}
 			new_encoding += " 1,";
 			new_encoding = new_encoding.trim();
 			new_line += new_encoding;
-			new_line += animal_label;
+			new_line += concept_label;
 			sb.append(new_line);
 			
 			String new_data_file = sb.toString();
@@ -153,9 +153,9 @@ public class BuildModel {
 		nn.save(Config.model_filepath);
 	}
 	
-	private boolean animal_exists(ArrayList<Integer> answer_list) {
-		ArrayList<ArrayList<Integer>> animal_paths = Config.animal_paths;
-		for (ArrayList<Integer> path: animal_paths) {
+	private boolean concept_exists(ArrayList<Integer> answer_list) {
+		ArrayList<ArrayList<Integer>> concept_paths = Config.concept_paths;
+		for (ArrayList<Integer> path: concept_paths) {
 			if(path.equals(answer_list)) {
 				return true;
 			}
@@ -166,8 +166,8 @@ public class BuildModel {
 	private void build_config() {
 		try {
 			reader = new BufferedReader(new FileReader(Config.data_filepath));
-			ArrayList<String> animal_labels = new ArrayList<>();
-			ArrayList<ArrayList<Integer>> animal_paths = new ArrayList<>();
+			ArrayList<String> concept_labels = new ArrayList<>();
+			ArrayList<ArrayList<Integer>> concept_paths = new ArrayList<>();
 			String line = "";
 			int index = 0;
 			int input_units_num = 0;
@@ -177,7 +177,7 @@ public class BuildModel {
 				String path = parts[0];
 				String label = parts[2];
 				ArrayList<Integer> path_list = new ArrayList<>();
-				animal_labels.add(label);
+				concept_labels.add(label);
 				
 				for(String c: path.split(" ")) {
 					path_list.add(Integer.parseInt(c));
@@ -186,12 +186,12 @@ public class BuildModel {
 					input_units_num = path_list.size();
 					index++;
 				}
-				animal_paths.add(path_list);
+				concept_paths.add(path_list);
 			}
-			Config.animal_labels = animal_labels;
-			Config.animal_paths = animal_paths;
+			Config.concept_labels = concept_labels;
+			Config.concept_paths = concept_paths;
 			Config.input_units_num = input_units_num;
-			Config.output_units_num = animal_labels.size();
+			Config.output_units_num = concept_labels.size();
 			reader.close();
 			
 		}
@@ -227,7 +227,7 @@ public class BuildModel {
 		return res;
 	}
 	
-	private ArrayList<Integer> parse_animal_paths(String input){
+	private ArrayList<Integer> parse_concept_paths(String input){
 		String[] inputs = input.split(" ");
 		ArrayList<Integer> res = new ArrayList<>();
 		for(String c: inputs) {

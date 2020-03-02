@@ -14,7 +14,7 @@ public class Game {
 	BufferedReader reader;
 	ArrayList<String> question_list;
 	ArrayList<Integer> answer_list;
-	ArrayList<ArrayList<Integer>> animal_paths;
+	ArrayList<ArrayList<Integer>> concept_paths;
 	BuildModel model;
 	Scanner in;
 	
@@ -82,24 +82,24 @@ public class Game {
 		Map<String, Double> map = new HashMap<>();
 		ValueComparator bvc = new ValueComparator(map);
 		Map<String, Double> sorted_map = new TreeMap<>(bvc);
-		ArrayList<String> animal_labels = Config.animal_labels;
+		ArrayList<String> concept_labels = Config.concept_labels;
 		for (int i = 0; i < outputs.length; i++) {
-			map.put(animal_labels.get(i), outputs[i]);
+			map.put(concept_labels.get(i), outputs[i]);
 		}
 		sorted_map.putAll(map);
 		int counter = 0;
 		
 		for (Map.Entry<String, Double> entry: sorted_map.entrySet()) {
 			if(counter > 2){
-				System.out.println("You win. What is your animal?");
+				System.out.println("You win. What is your concept?");
 				in = new Scanner(System.in);
-				String new_animal = in.next();
-				System.out.println("Give me a feature about your animal but my guess dont have");
+				String new_concept = in.next();
+				System.out.println("Give me a feature about your concept but my guess dont have");
 				in = new Scanner(System.in);
 				String new_question = in.nextLine();
 				// need to check type here
 				System.out.println("I need to learn it now");
-				model.add_new_animal(new_animal, new_question);
+				model.add_new_concept(new_concept, new_question);
 				return;
 			}
 			else{
