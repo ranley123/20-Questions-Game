@@ -24,7 +24,7 @@ public class BuildModel {
 	Connection concept_connection;
 	Connection question_connection;
 
-	private NeuralNetwork<BackPropagation> load_or_create_model(NeuralNetwork<BackPropagation> nn) throws IOException {
+	private NeuralNetwork<BackPropagation> load_or_create_model() throws IOException {
 		File model_file = new File(Config.model_filepath);
 		build_config_from_db();
 		if (model_file.exists()) {
@@ -36,7 +36,10 @@ public class BuildModel {
 			nn = initialise_NN();
 			DataSet training_set = build_dataset_from_db();
 			System.out.println("Training starts ...");
+//			System.out.println(training_set.getInputSize());
+//			System.out.println(nn.getInputsCount());
 			nn.learn(training_set);
+			
 			System.out.println("Training completed.");
 
 			nn.save(Config.model_filepath);
@@ -86,11 +89,6 @@ public class BuildModel {
 			return -1; 
 	}
 
-	public double[] run() throws IOException {
-		nn = load_or_create_model(nn);
-		double[] outputs = predict(Config.answer_list);
-		return outputs;
-	}
 
 	public void print_question_table(Connection connection) {
 		Statement statement;
@@ -142,7 +140,13 @@ public class BuildModel {
 		else {
 			ArrayList<Integer> answer_list = Config.answer_list;
 			answer_list.add(1);
+			
 			Config.answer_list = answer_list;
+			Config.concept_labels.add(new_concept);
+			Config.concept_paths.add(answer_list);
+			Config.input_units_num += 1;
+			Config.output_units_num += 1;
+			
 			System.out.println("adding new information to database......");
 			update_question_db(new_question);
 			update_concept_db(new_concept);
@@ -195,7 +199,7 @@ public class BuildModel {
 			answer_path = answer_path.trim();
 			String encoding = "";
 			int num_of_concepts = Config.concept_labels.size();
-			for(int i = 0; i < num_of_concepts; i++) {
+			for(int i = 0; i < num_of_concepts - 1; i++) {
 				encoding += "0 ";
 			}
 			encoding += "1";
@@ -225,7 +229,7 @@ public class BuildModel {
 
 
 	private void retrain() {
-		build_config_from_db();
+//		build_config_from_db();
 		initialise_NN();
 		DataSet training_set = build_dataset_from_db();
 		System.out.println("Retraining starts ...");
@@ -249,13 +253,10 @@ public class BuildModel {
 	}
 
 	private void build_config_from_db() {
-		Config.input_units_num = Config.answer_list.size();
 		ArrayList<String> concept_labels = new ArrayList<>();
 		ArrayList<ArrayList<Integer>> concept_paths = new ArrayList<>();
 		Statement statement;
 		try {
-			if(concept_connection == null)
-				System.out.println("is null");
 			statement = concept_connection.createStatement();
 			ResultSet result_set = statement.executeQuery("SELECT * FROM concept");
 			while(result_set.next()) {
@@ -289,6 +290,9 @@ public class BuildModel {
 				String output = result_set.getString("encoding");
 				ArrayList<Double> inputs = parse_in_outputs(input);
 				ArrayList<Double> outputs = parse_in_outputs(output);
+				
+//				System.out.println(inputs.size());
+//				System.out.println(training_set.getInputSize());
 				training_set.addRow(new DataSetRow(inputs, outputs));
 			}
 		}
@@ -318,15 +322,11 @@ public class BuildModel {
 		return nn;
 	}
 
-	private double[] predict(ArrayList<Integer> answer) {
-		ArrayList<Double> answer_formated = new ArrayList<>();
-		for (Integer a: answer) {
-			answer_formated.add(Double.valueOf(a));
-		}
-		//		System.out.println(answer.size());
-		//		System.out.println(nn.getInputsCount());
-		DataSetRow row = new DataSetRow(answer_formated);
-
+	public double[] predict(ArrayList<Double> answer) {
+//				System.out.println(answer.size());
+//				System.out.println(nn.getInputsCount());
+		DataSetRow row = new DataSetRow(answer);
+		
 		nn.setInput(row.getInput());
 		nn.calculate();
 
@@ -340,9 +340,14 @@ public class BuildModel {
 			String question_dbUrl = "jdbc:sqlite:question";
 			concept_connection = DriverManager.getConnection(concept_dbUrl);
 			question_connection = DriverManager.getConnection(question_dbUrl);
+			
+			nn = load_or_create_model();
 		}
 		catch (SQLException e) {
 			System.out.println(e.getMessage());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 }
